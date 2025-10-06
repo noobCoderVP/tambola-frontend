@@ -1,103 +1,134 @@
-import Image from "next/image";
+"use client";
+import { motion } from "framer-motion";
+import Tilt from "react-parallax-tilt";
+import { Button } from "@mui/material";
+import Link from "next/link";
+import CelebrationIcon from "@mui/icons-material/Celebration";
+import FireworksIcon from "@mui/icons-material/Whatshot";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import GroupAddIcon from "@mui/icons-material/GroupAdd";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+    return (
+        <main className="relative flex flex-col items-center justify-center min-h-screen overflow-hidden text-white bg-gradient-to-br from-amber-600 via-orange-700 to-rose-800 px-4">
+            {/* Floating festive glow background */}
+            <motion.div
+                className="absolute inset-0 opacity-30"
+                animate={{
+                    background: [
+                        "radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.2) 0%, transparent 60%)",
+                        "radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.25) 0%, transparent 60%)",
+                    ],
+                }}
+                transition={{
+                    repeat: Infinity,
+                    duration: 5,
+                    ease: "easeInOut",
+                    repeatType: "mirror",
+                }}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+
+            {/* Fireworks animation */}
+            <motion.div
+                className="absolute top-0 left-0 right-0 flex justify-center mt-8 pointer-events-none"
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{
+                    repeat: Infinity,
+                    duration: 1.5,
+                    ease: "easeInOut",
+                }}
+            >
+                <FireworksIcon sx={{ fontSize: 40, color: "#FFD700" }} />
+                <FireworksIcon
+                    sx={{ fontSize: 50, color: "#FF6347", marginLeft: 8 }}
+                />
+                <FireworksIcon
+                    sx={{ fontSize: 40, color: "#FF4500", marginLeft: 8 }}
+                />
+            </motion.div>
+
+            {/* Title */}
+            <motion.div
+                initial={{ opacity: 0, y: -40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                className="flex items-center gap-3 mb-4 mt-12"
+            >
+                <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
+                <h1 className="text-4xl font-extrabold tracking-wide text-center">
+                    Diwali Tambola
+                </h1>
+                <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
+            </motion.div>
+
+            {/* Subtitle */}
+            <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.6 }}
+                className="text-center text-lg mb-10 text-amber-100 max-w-xs"
+            >
+                Light up your game night with a festive twist on Tambola — 99
+                Diwali names, unlimited fun!
+            </motion.p>
+
+            {/* Tilt buttons section */}
+            <Tilt glareEnable={true} glareMaxOpacity={0.3} scale={1.05}>
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 1, duration: 0.6 }}
+                    className="flex flex-col gap-4 w-full max-w-xs"
+                >
+                    <Link href="/create" className="w-full">
+                        <Button
+                            variant="contained"
+                            fullWidth
+                            startIcon={<AddCircleOutlineIcon />}
+                            className="!bg-yellow-300 !text-rose-900 !font-bold !py-3 !rounded-xl !shadow-lg hover:!bg-yellow-400"
+                        >
+                            Create Game
+                        </Button>
+                    </Link>
+
+                    <Link href="/join" className="w-full">
+                        <Button
+                            variant="outlined"
+                            fullWidth
+                            startIcon={<GroupAddIcon />}
+                            className="!border-yellow-300 !text-yellow-200 !font-bold !py-3 !rounded-xl hover:!bg-yellow-300 hover:!text-rose-900"
+                        >
+                            Join Game
+                        </Button>
+                    </Link>
+
+                    {/* Admin Login Button */}
+                    <Link href="/login" className="w-full">
+                        <Button
+                            variant="outlined"
+                            fullWidth
+                            startIcon={<AdminPanelSettingsIcon />}
+                            className="!border-yellow-400 !text-yellow-200 !font-semibold !py-3 !rounded-xl hover:!bg-yellow-400 hover:!text-rose-900 transition-all"
+                        >
+                            Admin Login
+                        </Button>
+                    </Link>
+                </motion.div>
+            </Tilt>
+
+            {/* Floating footer text */}
+            <motion.div
+                className="absolute bottom-12 text-sm text-amber-200 flex items-center gap-2"
+                animate={{ y: [0, -5, 0] }}
+                transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                }}
+            >
+                🪔 Let the Festival of Lights Begin!
+            </motion.div>
+        </main>
+    );
 }
