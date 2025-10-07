@@ -7,7 +7,9 @@ import CelebrationIcon from "@mui/icons-material/Celebration";
 import FireworksIcon from "@mui/icons-material/Whatshot";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import GroupAddIcon from "@mui/icons-material/GroupAdd";
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import LoginIcon from "@mui/icons-material/Login";
 
 export default function Home() {
     return (
@@ -47,6 +49,29 @@ export default function Home() {
                     sx={{ fontSize: 40, color: "#FF4500", marginLeft: 8 }}
                 />
             </motion.div>
+
+            {/* Register / Login Buttons (Top Right) */}
+            <div className="absolute top-5 right-5 flex gap-3">
+                <Link href="/user/register">
+                    <Button
+                        variant="contained"
+                        startIcon={<PersonAddIcon />}
+                        className="!bg-yellow-300 !text-rose-900 !font-bold !rounded-xl !shadow-md hover:!bg-yellow-400 !py-2"
+                    >
+                        Register
+                    </Button>
+                </Link>
+
+                <Link href="/user/login">
+                    <Button
+                        variant="outlined"
+                        startIcon={<LoginIcon />}
+                        className="!border-yellow-300 !text-yellow-200 !font-bold !rounded-xl hover:!bg-yellow-300 hover:!text-rose-900 !py-2"
+                    >
+                        Login
+                    </Button>
+                </Link>
+            </div>
 
             {/* Title */}
             <motion.div
@@ -103,15 +128,15 @@ export default function Home() {
                         </Button>
                     </Link>
 
-                    {/* Admin Login Button */}
-                    <Link href="/login" className="w-full">
+                    {/* My Rooms Button */}
+                    <Link href="/rooms" className="w-full">
                         <Button
                             variant="outlined"
                             fullWidth
-                            startIcon={<AdminPanelSettingsIcon />}
+                            startIcon={<EmojiEventsIcon />}
                             className="!border-yellow-400 !text-yellow-200 !font-semibold !py-3 !rounded-xl hover:!bg-yellow-400 hover:!text-rose-900 transition-all"
                         >
-                            Admin Login
+                            My Rooms
                         </Button>
                     </Link>
                 </motion.div>
