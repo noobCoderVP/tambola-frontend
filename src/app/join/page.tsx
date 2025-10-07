@@ -49,7 +49,7 @@ export default function JoinRoomPage() {
                 );
                 localStorage.setItem("playerName", playerName);
                 localStorage.setItem("roomCode", roomCode.toUpperCase());
-                router.push(`/room/${roomCode}`);
+                router.push(`/room/player/${roomCode}`);
             } else {
                 setMessage(`❌ ${data.message || "Failed to join room."}`);
             }

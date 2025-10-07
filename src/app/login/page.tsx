@@ -5,12 +5,14 @@ import { motion } from "framer-motion";
 import CelebrationIcon from "@mui/icons-material/Celebration";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function AdminLoginPage() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
+    const router = useRouter();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -18,7 +20,7 @@ export default function AdminLoginPage() {
         setMessage("");
 
         try {
-            const res = await fetch("/api/admin-login", {
+            const res = await fetch("/admin/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username, password }),
@@ -29,7 +31,7 @@ export default function AdminLoginPage() {
             if (res.ok && data.success) {
                 setMessage("✅ Welcome back, Admin!");
                 setTimeout(() => {
-                    window.location.href = "/admin/dashboard";
+                    router.push("/admin/dashboard");
                 }, 1200);
             } else {
                 setMessage("❌ Invalid username or password");
