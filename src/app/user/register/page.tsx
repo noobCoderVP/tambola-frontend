@@ -6,6 +6,7 @@ import CelebrationIcon from "@mui/icons-material/Celebration";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { fetchWrapper } from "@/utils/fetch";
 
 export default function UserRegisterPage() {
     const [username, setUsername] = useState("");
@@ -27,17 +28,19 @@ export default function UserRegisterPage() {
         }
 
         try {
-            const res = await fetch("/user/register", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password }),
+            const res = await fetchWrapper({
+                url: '/users/register',
+                method: 'POST',
+                data: {
+                    username,
+                    password
+                }
             });
 
             const data = await res.json();
 
-            if (res.ok && data.success) {
+            if (res.ok) {
                 setMessage("✅ Registered successfully! Redirecting...");
-                localStorage.setItem("username", username);
                 setTimeout(() => router.push("/user/login"), 1500);
             } else {
                 setMessage(data.message || "❌ Registration failed.");

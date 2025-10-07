@@ -6,6 +6,7 @@ import CelebrationIcon from "@mui/icons-material/Celebration";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { fetchWrapper } from "@/utils/fetch";
 
 export default function UserLoginPage() {
     const [username, setUsername] = useState("");
@@ -20,18 +21,22 @@ export default function UserLoginPage() {
         setMessage("");
 
         try {
-            const res = await fetch("/user/login", {
+            const res = await fetchWrapper({
+                url: "/users/login",
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password }),
+                data: {
+                    username,
+                    password,
+                },
             });
 
             const data = await res.json();
+            console.log(data);
 
-            if (res.ok && data.success) {
+            if (res.ok) {
                 setMessage("✅ Welcome back, " + username + "!");
                 // Store username (optional for session)
-                localStorage.setItem("username", username);
+                localStorage.setItem("username", data.username);
 
                 setTimeout(() => {
                     router.push("/rooms");
