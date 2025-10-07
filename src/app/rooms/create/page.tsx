@@ -8,7 +8,7 @@ import { fetchWrapper } from "@/utils/fetch";
 import { useRouter } from "next/navigation";
 
 export default function CreateRoomPage() {
-    const [roomCode, setRoomCode] = useState("");
+    const [code, setRoomCode] = useState("");
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
     const router = useRouter();
@@ -31,7 +31,7 @@ export default function CreateRoomPage() {
                 method: "POST",
                 data: {
                     host: localStorage.getItem("username"),
-                    code: roomCode || null,
+                    code: code || null,
                 },
             });
 
@@ -86,7 +86,7 @@ export default function CreateRoomPage() {
                     </label>
                     <input
                         type="text"
-                        value={roomCode}
+                        value={code}
                         onChange={(e) =>
                             setRoomCode(e.target.value.toUpperCase())
                         }

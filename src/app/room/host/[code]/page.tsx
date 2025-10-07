@@ -1,69 +1,158 @@
 "use client";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import io from "socket.io-client";
 import CelebrationIcon from "@mui/icons-material/Celebration";
 import HistoryIcon from "@mui/icons-material/History";
-import LogoutIcon from "@mui/icons-material/Logout";
 import CloseIcon from "@mui/icons-material/Close";
-import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import LogoutIcon from "@mui/icons-material/Logout";
 import { fetchWrapper } from "@/utils/fetch";
 import { useParams } from "next/navigation";
+import CalledCodesModal from "@/components/CalledCodesModal";
+import Fireworks from "@/components/Fireworks";
+import { ArrowBack } from "@mui/icons-material";
+
+const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "", {
+    autoConnect: true,
+});
 
 export default function HostRoomPage() {
     const params: any = useParams();
-    const roomCode = params.code?.toUpperCase() || "";
+    const code = params.code?.toUpperCase() || "";
 
+    const [room, setRoom] = useState<any>(null);
     const [calledCodes, setCalledCodes] = useState<string[]>([]);
     const [lastCalled, setLastCalled] = useState<string | null>(null);
+    const [lastMeaning, setLastMeaning] = useState<string | null>(null);
     const [message, setMessage] = useState("");
     const [showHistory, setShowHistory] = useState(false);
     const [confirmClose, setConfirmClose] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [showFireworks, setShowFireworks] = useState(false);
+    const [showCountdown, setShowCountdown] = useState(false);
+    const [countdown, setCountdown] = useState(3);
 
-    // Fetch history once when page loads
-    useEffect(() => {
-        fetchHistory();
-    }, []);
-
-    const fetchHistory = async () => {
+    // ✅ Fetch room data
+    const fetchRoom = async () => {
         try {
             const res = await fetchWrapper({
-                url: `/rooms/${roomCode}/history`,
+                url: `/rooms/${code}`,
                 method: "GET",
             });
             const data = await res.json();
+            setRoom(data);
             setCalledCodes(data.calledCodes || []);
         } catch {
-            setMessage("⚠️ Failed to load history.");
+            setMessage("⚠️ Failed to load room details.");
         }
     };
 
-    const callRandomCode = async () => {
+    useEffect(() => {
+        fetchRoom();
+        socket.emit("user-joined", { code: code, username: "HOST" });
+
+        socket.on("user-joined", ({ username }) => {
+            setMessage(`🎉 ${username} joined the room`);
+        });
+
+        socket.on("game-started", () => {
+            setMessage("🔥 Game started!");
+            setRoom((r: any) => ({ ...r, isActive: true }));
+        });
+
+        socket.on("code-called", (calledCode) => {
+            setCalledCodes((prev) => [...prev, calledCode]);
+            setLastCalled(calledCode);
+        });
+
+        socket.on("claim-received", ({ username, claimType }) => {
+            setMessage(`🏆 ${username} made a claim: ${claimType}`);
+        });
+
+        return () => {socket.disconnect()};
+    }, []);
+
+    // ✅ Start Game
+    const startGame = async () => {
         setLoading(true);
         try {
             const res = await fetchWrapper({
-                url: `/rooms/${roomCode}/call`,
+                url: `/rooms/${code}/start`,
                 method: "POST",
+                data: { host: localStorage.getItem("username"), code },
             });
             const data = await res.json();
-            if (res.ok && data.item) {
-                setLastCalled(data.item);
-                setCalledCodes((prev) => [...prev, data.item]);
-                setMessage(`🪔 Called: ${data.item}`);
+            if (res.ok) {
+                socket.emit("game-started", { code });
+                setMessage(`🪔 Game Started!`);
             } else {
-                setMessage(data.message || "No more codes left!");
+                setMessage(data.message || "⚠️ Could not start game.");
             }
         } catch {
-            setMessage("⚠️ Error calling code.");
+            setMessage("⚠️ Error starting game.");
         } finally {
             setLoading(false);
         }
     };
 
+    // ✅ Call Random Code (with suspense + fireworks)
+    const callRandomCode = async () => {
+        if (loading) return;
+        setLoading(true);
+        setShowCountdown(true);
+        setCountdown(3);
+        setMessage("");
+
+        // Countdown animation (3...2...1...)
+        const countdownInterval = setInterval(() => {
+            setCountdown((prev) => {
+                if (prev === 1) {
+                    clearInterval(countdownInterval);
+                    setShowCountdown(false);
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        // Wait 3 seconds before fetching
+        setTimeout(async () => {
+            try {
+                const res = await fetchWrapper({
+                    url: `/rooms/${code}/call`,
+                    method: "POST",
+                    data: { host: localStorage.getItem("username") },
+                });
+                const data = await res.json();
+                if (res.ok && data.item) {
+                    socket.emit("code-called", {
+                        code: code,
+                        calledCode: data.item,
+                    });
+
+                    setLastCalled(data.item);
+                    setLastMeaning(data.meaning);
+                    setCalledCodes((prev) => [...prev, data.item]);
+                    setMessage(data.message || `🪔 Called: ${data.item}`);
+
+                    // 🎆 Trigger fireworks
+                    setShowFireworks(true);
+                    setTimeout(() => setShowFireworks(false), 2500);
+                } else {
+                    setMessage(data.message || "No more codes left!");
+                }
+            } catch {
+                setMessage("⚠️ Error calling code.");
+            } finally {
+                setLoading(false);
+            }
+        }, 3000);
+    };
+
+    // ✅ Close Room
     const closeRoom = async () => {
         try {
             const res = await fetchWrapper({
-                url: `/rooms/${roomCode}/close`,
+                url: `/rooms/${code}/close`,
                 method: "POST",
             });
             if (res.ok) {
@@ -77,6 +166,12 @@ export default function HostRoomPage() {
 
     return (
         <main className="flex flex-col items-center justify-center min-h-screen px-4 bg-gradient-to-br from-amber-700 via-orange-800 to-rose-900 text-white relative overflow-hidden">
+            <button
+                onClick={() => window.history.back()}
+                className="absolute top-5 left-5 flex items-center gap-1 text-yellow-200 hover:text-yellow-400 transition"
+            >
+                <ArrowBack fontSize="small" /> Back
+            </button>
             {/* Header */}
             <motion.div
                 initial={{ opacity: 0, y: -40 }}
@@ -92,41 +187,69 @@ export default function HostRoomPage() {
                     <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
                 </div>
                 <p className="text-yellow-200 text-sm">
-                    Room Code: <span className="font-bold">{roomCode}</span>
+                    Room Code: <span className="font-bold">{code}</span>
                 </p>
             </motion.div>
 
-            {/* Big Random Call Button */}
-            <motion.button
-                whileTap={{ scale: 0.9 }}
-                whileHover={{ scale: 1.05 }}
-                onClick={callRandomCode}
-                disabled={loading}
-                className="relative bg-yellow-300 text-rose-900 font-extrabold py-6 px-10 rounded-full text-2xl shadow-[0_0_20px_rgba(255,215,0,0.8)] hover:shadow-[0_0_35px_rgba(255,215,0,1)] hover:bg-yellow-400 active:scale-95 transition-all"
-            >
-                {loading ? "Calling..." : "🎆 CALL RANDOM CODE 🎆"}
-                <motion.span
-                    animate={{ opacity: [1, 0.6, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                    className="absolute inset-0 rounded-full border-4 border-yellow-400 opacity-30"
-                ></motion.span>
-            </motion.button>
+            {/* Start / Call Buttons */}
+            <div className="flex flex-col gap-4 w-full max-w-xs items-center">
+                {!room?.isActive ? (
+                    <button
+                        onClick={startGame}
+                        disabled={loading}
+                        className="relative bg-yellow-300 text-rose-900 font-extrabold py-6 px-10 rounded-full text-2xl shadow-[0_0_20px_rgba(255,215,0,0.8)] hover:shadow-[0_0_35px_rgba(255,215,0,1)] hover:bg-yellow-400 active:scale-95 transition-all"
+                    >
+                        {loading ? "Starting..." : "🚀 Start Game"}
+                    </button>
+                ) : (
+                    <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        whileHover={{ scale: 1.05 }}
+                        onClick={callRandomCode}
+                        disabled={loading}
+                        className="relative bg-yellow-300 text-rose-900 font-extrabold py-6 px-10 rounded-full text-2xl shadow-[0_0_20px_rgba(255,215,0,0.8)] hover:shadow-[0_0_35px_rgba(255,215,0,1)] hover:bg-yellow-400 active:scale-95 transition-all"
+                    >
+                        {loading ? "Calling..." : "🎆 CALL CODE 🎆"}
+                    </motion.button>
+                )}
+            </div>
 
-            {/* Last Called */}
-            {lastCalled && (
+            {/* Countdown before reveal */}
+            {showCountdown && (
+                <motion.div
+                    key={countdown}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 0.4 }}
+                    className="mt-8 text-6xl font-extrabold text-yellow-300 drop-shadow-lg"
+                >
+                    {countdown > 0 ? countdown : ""}
+                </motion.div>
+            )}
+
+            {/* Last Called Display */}
+            {lastCalled && !showCountdown && (
                 <motion.div
                     key={lastCalled}
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    transition={{ duration: 0.5 }}
+                    transition={{ duration: 0.6 }}
                     className="mt-8 text-center"
                 >
                     <p className="text-yellow-100 text-lg">Last Called:</p>
-                    <p className="text-5xl font-extrabold text-yellow-300 tracking-widest mt-2 drop-shadow-lg">
+                    <p className="text-6xl font-extrabold text-yellow-300 tracking-widest mt-2 drop-shadow-lg">
                         {lastCalled}
                     </p>
+                    {lastMeaning && (
+                        <p className="text-yellow-200 text-lg mt-2 italic">
+                            “{lastMeaning}”
+                        </p>
+                    )}
                 </motion.div>
             )}
+
+            {/* Fireworks Animation */}
+            {showFireworks && <Fireworks />}
 
             {/* Buttons Section */}
             <div className="flex flex-col gap-3 mt-10 w-full max-w-xs">
@@ -134,7 +257,7 @@ export default function HostRoomPage() {
                     onClick={() => setShowHistory(true)}
                     className="flex items-center justify-center gap-2 bg-transparent border border-yellow-400 text-yellow-200 py-3 rounded-xl hover:bg-yellow-400 hover:text-rose-900 transition"
                 >
-                    <HistoryIcon /> View Called Names
+                    <HistoryIcon /> View Called Codes
                 </button>
 
                 <button
@@ -145,41 +268,14 @@ export default function HostRoomPage() {
                 </button>
             </div>
 
-            {message && (
-                <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="mt-4 text-center text-sm text-yellow-100"
-                >
-                    {message}
-                </motion.p>
-            )}
-
-            {/* History Modal */}
+            {/* Modals */}
             {showHistory && (
-                <div className="absolute inset-0 bg-black/60 flex justify-center items-center">
-                    <div className="bg-rose-900 border border-yellow-400 p-6 rounded-2xl w-80 max-h-[70vh] overflow-y-auto text-yellow-200 shadow-lg">
-                        <h2 className="text-lg font-bold mb-3 text-center">
-                            🪔 Called Codes
-                        </h2>
-                        <ul className="space-y-1 text-sm">
-                            {calledCodes.length > 0 ? (
-                                calledCodes.map((c, i) => <li key={i}>{c}</li>)
-                            ) : (
-                                <li>No codes called yet.</li>
-                            )}
-                        </ul>
-                        <button
-                            onClick={() => setShowHistory(false)}
-                            className="mt-4 w-full bg-yellow-300 text-rose-900 font-bold py-2 rounded-lg hover:bg-yellow-400"
-                        >
-                            Close
-                        </button>
-                    </div>
-                </div>
+                <CalledCodesModal
+                    calledCodes={calledCodes}
+                    onClose={() => setShowHistory(false)}
+                />
             )}
 
-            {/* Confirmation Modal */}
             {confirmClose && (
                 <div className="absolute inset-0 bg-black/70 flex justify-center items-center">
                     <div className="bg-rose-900 border border-yellow-400 p-6 rounded-2xl w-80 text-center text-yellow-200 shadow-lg">
@@ -215,7 +311,7 @@ export default function HostRoomPage() {
                 <LogoutIcon fontSize="small" /> Exit
             </button>
 
-            {/* Floating footer animation */}
+            {/* Floating Footer */}
             <motion.div
                 className="absolute bottom-8 text-sm text-yellow-100"
                 animate={{ y: [0, -5, 0] }}

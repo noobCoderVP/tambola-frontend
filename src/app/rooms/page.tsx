@@ -112,7 +112,7 @@ export default function MyRoomsPage() {
                             <Card
                                 onClick={() =>
                                     router.push(
-                                        room.isHost
+                                        room.host == localStorage.getItem("username")
                                             ? `/room/host/${room.code}`
                                             : `/room/player/${room.code}`
                                     )
@@ -126,7 +126,7 @@ export default function MyRoomsPage() {
                                 <CardContent className="flex items-center justify-between !py-3 !px-4 text-rose-900 font-semibold">
                                     {/* Left side */}
                                     <div className="flex items-center gap-2">
-                                        {room.isHost ? (
+                                        {room.host == localStorage.getItem("username") ? (
                                             <EmojiEventsIcon
                                                 sx={{
                                                     fontSize: 22,

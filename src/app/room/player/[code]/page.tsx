@@ -8,6 +8,14 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import { fetchWrapper } from "@/utils/fetch";
 import TicketGrid from "@/components/TicketGrid";
 import { useParams } from "next/navigation";
+import io from "socket.io-client";
+import CalledCodesModal from "@/components/CalledCodesModal"; // ✅ Added
+import { ArrowBack } from "@mui/icons-material";
+import FireworksBackground from "@/components/FireworksBackground";
+
+const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
+    autoConnect: true,
+});
 
 export default function RoomPage() {
     const params: any = useParams();
@@ -21,11 +29,98 @@ export default function RoomPage() {
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
+    const [showClaimOptions, setShowClaimOptions] = useState(false);
+    const [showFireworks, setShowFireworks] = useState(false);
+    const [calledPopup, setCalledPopup] = useState<string | null>(null);
+
+    const claimOptions = [
+        "First Five",
+        "Line Top",
+        "Line Middle",
+        "Line Bottom",
+        "Full House",
+    ];
+
+    // ✅ Fetch called codes for modal
+    const fetchHistory = async () => {
+        try {
+            const res = await fetchWrapper({
+                url: `/rooms/${code}`,
+                method: "GET",
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setCalledCodes(data.calledCodes || []);
+                setShowHistory(true);
+            } else {
+                setMessage("⚠️ Failed to load called codes.");
+            }
+        } catch {
+            setMessage("⚠️ Error loading history.");
+        }
+    };
+
+    // ✅ Claim Handler with Socket Emit
+    const handleClaim = async (type: string) => {
+        try {
+            const res = await fetchWrapper({
+                url: `/rooms/${code}/verify-claim`,
+                method: "POST",
+                data: { player: username, type },
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                setMessage(data.message || "Claim submitted!");
+                socket.emit("claim-received", {
+                    code,
+                    player: username,
+                    type,
+                });
+            } else {
+                setMessage(data.message || "❌ Claim failed.");
+            }
+        } catch (err) {
+            console.error(err);
+            setMessage("⚠️ Claim request failed.");
+        } finally {
+            setShowClaimOptions(false);
+        }
+    };
 
     useEffect(() => {
         const storedName = localStorage.getItem("username");
         if (storedName) setPlayerName(storedName);
         fetchTicket();
+
+        // Join socket room for live updates
+        if (code && storedName) {
+            socket.emit("user-joined", { code, username: storedName });
+        }
+
+        // 👇 Add these two event listeners:
+        socket.on("game-started", () => {
+            setMessage("🔥 Game started!");
+            setShowFireworks(true);
+            setTimeout(() => setShowFireworks(false), 4000);
+        });
+
+        socket.on("code-called", (calledCode) => {
+            console.log("Code called:", calledCode);
+            setCalledPopup(`🎯 Number called: ${calledCode}`);
+            setShowFireworks(true);
+
+            setTimeout(() => {
+                setCalledPopup(null);
+                setShowFireworks(false);
+            }, 3000);
+        });
+
+        return () => {
+            socket.off("game-started");
+            socket.off("code-called");
+            socket.disconnect();
+        };
     }, []);
 
     const fetchTicket = async () => {
@@ -104,42 +199,22 @@ export default function RoomPage() {
         }).catch((err) => console.error("Unmark update failed", err));
     };
 
-    const handleClaim = async () => {
-        try {
-            const res = await fetchWrapper({
-                url: `/rooms/${code}/claim`,
-                method: "POST",
-                data: { username },
-            });
-            const data = await res.json();
-            setMessage(data.message || "Claim submitted!");
-        } catch (err) {
-            setMessage("⚠️ Claim request failed.");
-        }
-    };
-
-    const fetchHistory = async () => {
-        try {
-            const res = await fetchWrapper({
-                url: `/rooms/${code}/history`,
-                method: "GET",
-            });
-            const data = await res.json();
-            setCalledCodes(data.calledCodes || []);
-            setShowHistory(true);
-        } catch (err) {
-            setMessage("⚠️ Failed to load history.");
-        }
-    };
-
     return (
         <main className="flex flex-col items-center justify-center min-h-screen px-4 bg-gradient-to-br from-amber-700 via-orange-800 to-rose-900 text-white relative overflow-hidden">
+            <FireworksBackground />
             {/* Header */}
+            {/* Back */}
+            <button
+                onClick={() => window.history.back()}
+                className="absolute top-5 left-5 flex items-center gap-1 text-yellow-200 hover:text-yellow-400 transition"
+            >
+                <ArrowBack fontSize="small" /> Back
+            </button>
             <motion.div
                 initial={{ opacity: 0, y: -40 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
-                className="flex flex-col items-center mt-10 mb-6"
+                className="flex flex-col items-center mt-12 mb-6"
             >
                 <div className="flex items-center gap-3 mb-2">
                     <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
@@ -183,7 +258,7 @@ export default function RoomPage() {
                         <div className="flex justify-between items-center mt-3 text-yellow-200 text-sm">
                             <span>⭐ Marked: {markedCount}</span>
                             <button
-                                onClick={handleClaim}
+                                onClick={() => setShowClaimOptions(true)}
                                 className="flex items-center gap-1 bg-yellow-300 text-rose-900 font-bold px-4 py-2 rounded-lg hover:bg-yellow-400 transition active:scale-95"
                             >
                                 <EmojiEventsIcon fontSize="small" /> Claim
@@ -196,7 +271,7 @@ export default function RoomPage() {
                     onClick={fetchHistory}
                     className="flex items-center gap-2 text-yellow-200 mt-3 hover:text-yellow-400 transition"
                 >
-                    <HistoryIcon /> View Called Names
+                    <HistoryIcon /> View Called Codes
                 </button>
 
                 {message && (
@@ -210,53 +285,52 @@ export default function RoomPage() {
                 )}
             </motion.div>
 
-            {/* History Modal */}
+            {/* ✅ Reusable Called Codes Modal */}
             {showHistory && (
+                <CalledCodesModal
+                    calledCodes={calledCodes}
+                    onClose={() => setShowHistory(false)}
+                />
+            )}
+
+            {/* Claim Modal */}
+            {showClaimOptions && (
                 <div className="absolute inset-0 bg-black/60 flex justify-center items-center">
-                    <div className="bg-rose-900 border border-yellow-400 p-6 rounded-2xl w-80 max-h-[70vh] overflow-y-auto text-yellow-200 shadow-lg">
+                    <div className="bg-rose-900 border border-yellow-400 p-6 rounded-2xl w-80 text-yellow-200 shadow-lg">
                         <h2 className="text-lg font-bold mb-3 text-center">
-                            🪔 Called Names
+                            🏆 Choose Claim Type
                         </h2>
-                        <ul className="space-y-1 text-sm">
-                            {calledCodes.length > 0 ? (
-                                calledCodes.map((c, i) => <li key={i}>{c}</li>)
-                            ) : (
-                                <li>No codes called yet.</li>
-                            )}
-                        </ul>
+                        <div className="flex flex-col gap-2">
+                            {claimOptions.map((type) => (
+                                <button
+                                    key={type}
+                                    onClick={() => handleClaim(type)}
+                                    className="bg-yellow-300 text-rose-900 font-bold py-2 rounded-lg hover:bg-yellow-400"
+                                >
+                                    {type}
+                                </button>
+                            ))}
+                        </div>
                         <button
-                            onClick={() => setShowHistory(false)}
+                            onClick={() => setShowClaimOptions(false)}
                             className="mt-4 w-full bg-yellow-300 text-rose-900 font-bold py-2 rounded-lg hover:bg-yellow-400"
                         >
-                            Close
+                            Cancel
                         </button>
                     </div>
                 </div>
             )}
-
-            {/* Logout */}
-            <button
-                onClick={() => {
-                    localStorage.clear();
-                    window.location.href = "/";
-                }}
-                className="absolute top-5 right-5 flex items-center gap-1 text-yellow-200 hover:text-yellow-400 transition"
-            >
-                <LogoutIcon fontSize="small" /> Exit
-            </button>
-
-            {/* Footer */}
-            <motion.div
-                className="absolute bottom-8 text-sm text-yellow-100"
-                animate={{ y: [0, -5, 0] }}
-                transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                }}
-            >
-                🎇 Let the Diwali Tambola Luck Shine Bright!
-            </motion.div>
+            {calledPopup && (
+                <motion.div
+                    initial={{ opacity: 0, y: -50 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -50 }}
+                    transition={{ duration: 0.4 }}
+                    className="fixed top-8 left-1/2 -translate-x-1/2 bg-yellow-300 text-rose-900 px-6 py-3 rounded-2xl shadow-2xl text-lg font-extrabold z-[9999] border-4 border-yellow-500 backdrop-blur-md"
+                >
+                    {calledPopup}
+                </motion.div>
+            )}
         </main>
     );
 }
