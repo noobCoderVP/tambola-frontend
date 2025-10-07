@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import CelebrationIcon from "@mui/icons-material/Celebration";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -8,22 +8,24 @@ import { fetchWrapper } from "@/utils/fetch";
 import { useRouter } from "next/navigation";
 
 export default function JoinRoomPage() {
-    const [playerName, setPlayerName] = useState("");
-    const [roomCode, setRoomCode] = useState("");
+    const [username, setUsername] = useState("");
+    const [code, setRoomCode] = useState("");
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
     const router = useRouter();
 
-    const validateName = (name: string) => /^[A-Za-z._]+$/.test(name);
+    // ✅ Auto-fill username from localStorage
+    useEffect(() => {
+        const storedUsername = localStorage.getItem("username");
+        if (!storedUsername) {
+            router.push("/user/login");
+        } else {
+            setUsername(storedUsername);
+        }
+    }, [router]);
 
     const handleJoinRoom = async () => {
-        if (!validateName(playerName)) {
-            setMessage(
-                "❌ Name can only contain letters, '.' or '_', and no spaces."
-            );
-            return;
-        }
-        if (!roomCode.trim()) {
+        if (!code.trim()) {
             setMessage("⚠️ Please enter a valid room code.");
             return;
         }
@@ -33,11 +35,11 @@ export default function JoinRoomPage() {
 
         try {
             const response = await fetchWrapper({
-                url: `/rooms/${roomCode}/join`,
+                url: `/rooms/${code}/join`,
                 method: "POST",
                 data: {
-                    playerName,
-                    roomCode: roomCode.toUpperCase(),
+                    player: username,
+                    code: code.toUpperCase(),
                 },
             });
 
@@ -45,11 +47,10 @@ export default function JoinRoomPage() {
 
             if (response.ok) {
                 setMessage(
-                    `🎉 Joined room successfully! Welcome, ${playerName}!`
+                    `🎉 Joined room successfully! Welcome, ${username}!`
                 );
-                localStorage.setItem("playerName", playerName);
-                localStorage.setItem("roomCode", roomCode.toUpperCase());
-                router.push(`/room/player/${roomCode}`);
+                localStorage.setItem("code", code.toUpperCase());
+                router.push(`/room/player/${code}`);
             } else {
                 setMessage(`❌ ${data.message || "Failed to join room."}`);
             }
@@ -91,26 +92,27 @@ export default function JoinRoomPage() {
                 transition={{ duration: 0.6 }}
                 className="bg-white/10 p-6 rounded-2xl shadow-xl backdrop-blur-md flex flex-col gap-4 w-full max-w-sm border border-yellow-400/40"
             >
+                {/* ✅ Auto-filled Player Name (Read-only) */}
                 <div className="flex flex-col gap-2">
                     <label className="text-yellow-200 font-semibold">
                         Player Name
                     </label>
                     <input
                         type="text"
-                        value={playerName}
-                        onChange={(e) => setPlayerName(e.target.value)}
-                        placeholder="Enter your name"
-                        className="w-full px-4 py-2 rounded-lg bg-transparent border border-yellow-400 text-white placeholder-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                        value={username}
+                        readOnly
+                        className="w-full px-4 py-2 rounded-lg bg-red-800/50 border border-yellow-400 text-yellow-200 cursor-not-allowed focus:outline-none"
                     />
                 </div>
 
+                {/* Room Code Input */}
                 <div className="flex flex-col gap-2">
                     <label className="text-yellow-200 font-semibold">
                         Room Code
                     </label>
                     <input
                         type="text"
-                        value={roomCode}
+                        value={code}
                         onChange={(e) =>
                             setRoomCode(e.target.value.toUpperCase())
                         }
@@ -119,6 +121,7 @@ export default function JoinRoomPage() {
                     />
                 </div>
 
+                {/* Join Button */}
                 <button
                     onClick={handleJoinRoom}
                     disabled={loading}

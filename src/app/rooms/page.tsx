@@ -1,43 +1,76 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, Typography, Button } from "@mui/material";
 import Link from "next/link";
 import CelebrationIcon from "@mui/icons-material/Celebration";
-import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import HomeIcon from "@mui/icons-material/Home";
-import { fetchWrapper } from "@/utils/fetch"; // adjust if your util path differs
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import { fetchWrapper } from "@/utils/fetch";
+import { useRouter } from "next/navigation";
 
 export default function MyRoomsPage() {
     const [rooms, setRooms] = useState<any[]>([]);
     const [username, setUsername] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+    const router = useRouter();
 
     useEffect(() => {
+        const user = localStorage.getItem("username");
+        if (!user) {
+            router.replace("/user/login");
+            return;
+        }
+
+        setUsername(user);
+
         const loadRooms = async () => {
             try {
                 const res = await fetchWrapper({
-                    url: `/rooms/host/${localStorage.getItem("playerName")}`,
+                    url: `/rooms/host/${user}`,
                     method: "GET",
                 });
                 const result = await res.json();
-                setRooms(result);
+                if (res.ok) setRooms(result);
             } catch (err) {
                 console.error(err);
+            } finally {
+                setLoading(false);
             }
         };
+
         loadRooms();
-        setUsername(localStorage.getItem("playerName"));
-    }, []);
+    }, [router]);
+
+    if (loading) {
+        return (
+            <main className="flex items-center justify-center min-h-screen bg-gradient-to-br from-amber-600 via-orange-700 to-rose-800 text-white">
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{
+                        duration: 0.6,
+                        repeat: Infinity,
+                        repeatType: "mirror",
+                    }}
+                    className="text-lg font-semibold"
+                >
+                    🪔 Loading your rooms...
+                </motion.div>
+            </main>
+        );
+    }
 
     return (
         <main className="relative flex flex-col items-center justify-center min-h-screen overflow-hidden text-white bg-gradient-to-br from-amber-600 via-orange-700 to-rose-800 px-4 py-10">
-            {/* Floating festive background */}
+            {/* Background animation */}
             <motion.div
                 className="absolute inset-0 opacity-30"
                 animate={{
                     background: [
-                        "radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.2) 0%, transparent 60%)",
-                        "radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.25) 0%, transparent 60%)",
+                        "radial-gradient(circle at 10% 20%, rgba(255,255,255,0.2) 0%, transparent 60%)",
+                        "radial-gradient(circle at 80% 70%, rgba(255,255,255,0.25) 0%, transparent 60%)",
                     ],
                 }}
                 transition={{
@@ -62,70 +95,63 @@ export default function MyRoomsPage() {
                 <CelebrationIcon sx={{ fontSize: 36, color: "#FFD700" }} />
             </motion.div>
 
-            {/* Room list */}
-            <div className="w-full max-w-md flex flex-col gap-5 z-10">
+            {/* Room List */}
+            <div className="w-full max-w-md flex flex-col gap-4 z-10">
                 {rooms.length === 0 ? (
                     <p className="text-center text-amber-100">
                         🎲 No rooms found for {username}.
                     </p>
                 ) : (
-                    rooms.map((room: any) => (
+                    rooms.map((room) => (
                         <motion.div
                             key={room._id}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5 }}
+                            transition={{ duration: 0.4 }}
                         >
                             <Card
-                                className={`!rounded-2xl !shadow-lg ${
+                                onClick={() =>
+                                    router.push(
+                                        room.isHost
+                                            ? `/room/host/${room.code}`
+                                            : `/room/player/${room.code}`
+                                    )
+                                }
+                                className={`!rounded-xl !shadow-md !border !border-yellow-300/30 cursor-pointer hover:!scale-[1.02] transition-transform duration-200 ${
                                     room.isHost
-                                        ? "!bg-gradient-to-r from-yellow-300 to-orange-400"
-                                        : "!bg-gradient-to-r from-rose-400 to-amber-400"
-                                } !text-rose-900`}
+                                        ? "!bg-gradient-to-r from-yellow-200 to-orange-300"
+                                        : "!bg-gradient-to-r from-rose-300 to-amber-300"
+                                }`}
                             >
-                                <CardContent className="flex flex-col gap-3">
-                                    <Typography
-                                        variant="h6"
-                                        className="font-bold flex items-center gap-2"
-                                    >
+                                <CardContent className="flex items-center justify-between !py-3 !px-4 text-rose-900 font-semibold">
+                                    {/* Left side */}
+                                    <div className="flex items-center gap-2">
                                         {room.isHost ? (
                                             <EmojiEventsIcon
-                                                sx={{ color: "#b45309" }}
+                                                sx={{
+                                                    fontSize: 22,
+                                                    color: "#92400e",
+                                                }}
                                             />
                                         ) : (
                                             <HomeIcon
-                                                sx={{ color: "#9d174d" }}
+                                                sx={{
+                                                    fontSize: 22,
+                                                    color: "#9d174d",
+                                                }}
                                             />
                                         )}
-                                        {room.isHost
-                                            ? "Hosted Room"
-                                            : "Joined Room"}
-                                    </Typography>
+                                        <span>
+                                            {room.code
+                                                ? room.code
+                                                : "No Code"}
+                                        </span>
+                                    </div>
 
-                                    <Typography>
-                                        👤 <b>{room.name}</b>
-                                    </Typography>
-
-                                    {room.roomCode && (
-                                        <Typography>
-                                            🔢 Room Code: <b>{room.roomCode}</b>
-                                        </Typography>
-                                    )}
-
-                                    {room.isHost && room.roomCode && (
-                                        <Link
-                                            href={`/room/${room.roomCode}`}
-                                            className="w-full"
-                                        >
-                                            <Button
-                                                variant="contained"
-                                                fullWidth
-                                                className="!bg-rose-700 !text-yellow-200 !font-bold hover:!bg-rose-800"
-                                            >
-                                                Open Room
-                                            </Button>
-                                        </Link>
-                                    )}
+                                    {/* Right side: label */}
+                                    <span className="text-sm px-3 py-1 rounded-full bg-white/60 text-rose-900 font-bold">
+                                        {room.host == localStorage.getItem("username") ? "Host" : "Player"}
+                                    </span>
                                 </CardContent>
                             </Card>
                         </motion.div>
@@ -143,7 +169,7 @@ export default function MyRoomsPage() {
                 </Button>
             </Link>
 
-            {/* Floating footer */}
+            {/* Footer */}
             <motion.div
                 className="absolute bottom-10 text-sm text-amber-200 flex items-center gap-2"
                 animate={{ y: [0, -5, 0] }}

@@ -106,7 +106,7 @@ export default function Home() {
                     transition={{ delay: 1, duration: 0.6 }}
                     className="flex flex-col gap-4 w-full max-w-xs"
                 >
-                    <Link href="/create" className="w-full">
+                    <Link href="/rooms/create" className="w-full">
                         <Button
                             variant="contained"
                             fullWidth
@@ -117,7 +117,7 @@ export default function Home() {
                         </Button>
                     </Link>
 
-                    <Link href="/join" className="w-full">
+                    <Link href="/rooms/join" className="w-full">
                         <Button
                             variant="outlined"
                             fullWidth

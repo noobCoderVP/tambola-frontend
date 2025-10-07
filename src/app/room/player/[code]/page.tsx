@@ -11,9 +11,9 @@ import { useParams } from "next/navigation";
 
 export default function RoomPage() {
     const params: any = useParams();
-    const roomCode = params.code?.toUpperCase() || "";
-    const [playerName, setPlayerName] = useState<string>("");
-    const [ticket, setTicket] = useState<string[][] | null>(null);
+    const code = params.code?.toUpperCase() || "";
+    const [username, setPlayerName] = useState<string>("");
+    const [ticketString, setTicketString] = useState<string | null>(null);
     const [ticketId, setTicketId] = useState<string | null>(null);
     const [markedItems, setMarkedItems] = useState<string[]>([]);
     const [markedCount, setMarkedCount] = useState(0);
@@ -23,27 +23,23 @@ export default function RoomPage() {
     const [showHistory, setShowHistory] = useState(false);
 
     useEffect(() => {
-        const storedName = localStorage.getItem("playerName");
+        const storedName = localStorage.getItem("username");
         if (storedName) setPlayerName(storedName);
         fetchTicket();
     }, []);
 
-    const parseTicketString = (ticketString: string): string[][] => {
-        return ticketString.split("\\").map((row) => row.split(","));
-    };
-
     const fetchTicket = async () => {
         try {
             const res = await fetchWrapper({
-                url: `/tickets?user=${localStorage.getItem(
-                    "playerName"
-                )}&roomCode=${roomCode}`,
+                url: `/tickets?username=${localStorage.getItem(
+                    "username"
+                )}&code=${code}`,
                 method: "GET",
             });
             if (res.ok) {
                 const data = await res.json();
                 if (data?.ticketString) {
-                    setTicket(parseTicketString(data.ticketString));
+                    setTicketString(data.ticketString);
                     setMarkedItems(data.markedItems || []);
                     setMarkedCount(data.markedItems?.length || 0);
                     setTicketId(data._id);
@@ -60,11 +56,11 @@ export default function RoomPage() {
             const res = await fetchWrapper({
                 url: `/tickets`,
                 method: "POST",
-                data: { user: playerName, roomCode },
+                data: { username, code },
             });
             const data = await res.json();
             if (res.ok && data.ticketString) {
-                setTicket(parseTicketString(data.ticketString));
+                setTicketString(data.ticketString);
                 setMarkedItems([]);
                 setTicketId(data._id);
                 setMessage("🎟️ Ticket generated successfully!");
@@ -81,31 +77,39 @@ export default function RoomPage() {
 
     const handleMark = async (symbol: string) => {
         if (!symbol || !ticketId) return;
-        let updatedMarks = [...markedItems];
+        if (markedItems.includes(symbol)) return;
 
-        if (updatedMarks.includes(symbol)) {
-            updatedMarks = updatedMarks.filter((item) => item !== symbol);
-        } else {
-            updatedMarks.push(symbol);
-        }
-
+        const updatedMarks = [...markedItems, symbol];
         setMarkedItems(updatedMarks);
         setMarkedCount(updatedMarks.length);
 
-        // Optional: Update DB (non-blocking)
         fetchWrapper({
             url: `/tickets/${ticketId}/mark`,
-            method: "POST",
+            method: "PATCH",
             data: { markedItems: updatedMarks },
         }).catch((err) => console.error("Mark update failed", err));
+    };
+
+    const handleUnmark = async (symbol: string) => {
+        if (!symbol || !ticketId) return;
+
+        const updatedMarks = markedItems.filter((item) => item !== symbol);
+        setMarkedItems(updatedMarks);
+        setMarkedCount(updatedMarks.length);
+
+        fetchWrapper({
+            url: `/tickets/${ticketId}/mark`,
+            method: "PATCH",
+            data: { markedItems: updatedMarks },
+        }).catch((err) => console.error("Unmark update failed", err));
     };
 
     const handleClaim = async () => {
         try {
             const res = await fetchWrapper({
-                url: `/rooms/${roomCode}/claim`,
+                url: `/rooms/${code}/claim`,
                 method: "POST",
-                data: { playerName },
+                data: { username },
             });
             const data = await res.json();
             setMessage(data.message || "Claim submitted!");
@@ -117,7 +121,7 @@ export default function RoomPage() {
     const fetchHistory = async () => {
         try {
             const res = await fetchWrapper({
-                url: `/rooms/${roomCode}/history`,
+                url: `/rooms/${code}/history`,
                 method: "GET",
             });
             const data = await res.json();
@@ -145,8 +149,8 @@ export default function RoomPage() {
                     <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
                 </div>
                 <p className="text-yellow-200 text-sm">
-                    🪔 Welcome <span className="font-bold">{playerName}</span> |
-                    Room: <span className="font-bold">{roomCode}</span>
+                    🪔 Welcome <span className="font-bold">{username}</span> |
+                    Room: <span className="font-bold">{code}</span>
                 </p>
             </motion.div>
 
@@ -157,7 +161,7 @@ export default function RoomPage() {
                 transition={{ duration: 0.6 }}
                 className="bg-white/10 p-6 rounded-2xl shadow-xl backdrop-blur-md flex flex-col gap-5 w-full max-w-md border border-yellow-400/40"
             >
-                {!ticket ? (
+                {!ticketString ? (
                     <button
                         onClick={generateTicket}
                         disabled={loading}
@@ -168,9 +172,13 @@ export default function RoomPage() {
                 ) : (
                     <>
                         <TicketGrid
-                            ticket={ticket}
+                            ticketString={ticketString}
                             markedItems={markedItems}
-                            onMark={handleMark}
+                            onMark={(symbol) => {
+                                if (markedItems.includes(symbol))
+                                    handleUnmark(symbol);
+                                else handleMark(symbol);
+                            }}
                         />
                         <div className="flex justify-between items-center mt-3 text-yellow-200 text-sm">
                             <span>⭐ Marked: {markedCount}</span>
@@ -237,7 +245,7 @@ export default function RoomPage() {
                 <LogoutIcon fontSize="small" /> Exit
             </button>
 
-            {/* Floating Footer */}
+            {/* Footer */}
             <motion.div
                 className="absolute bottom-8 text-sm text-yellow-100"
                 animate={{ y: [0, -5, 0] }}
