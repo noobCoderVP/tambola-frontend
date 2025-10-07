@@ -1,4 +1,5 @@
 "use client";
+import { diwaliSymbols } from "@/data/symbols";
 import { motion } from "framer-motion";
 
 export default function TicketGrid({
@@ -21,7 +22,7 @@ export default function TicketGrid({
                             key={`${rowIndex}-${colIndex}`}
                             whileTap={{ scale: 0.9 }}
                             onClick={() => symbol && onMark(symbol)}
-                            className={`w-24 h-14 flex items-center justify-center rounded-xl cursor-pointer text-lg font-bold border ${
+                            className={`w-24 h-14 flex flex-col items-center justify-center rounded-xl cursor-pointer text-lg font-bold border ${
                                 symbol
                                     ? isMarked
                                         ? "bg-yellow-300 text-rose-900 border-yellow-400"
@@ -29,7 +30,22 @@ export default function TicketGrid({
                                     : "border-transparent"
                             }`}
                         >
-                            {symbol}
+                            <div>{symbol}</div>
+                            <div
+                                className={`${
+                                    symbol
+                                        ? isMarked
+                                            ? "bg-yellow-300 text-rose-900 border-yellow-400"
+                                            : "bg-transparent border-yellow-400 text-yellow-100 hover:bg-yellow-300/30"
+                                        : "border-transparent"
+                                } text-[10px]`}
+                            >
+                                {
+                                    diwaliSymbols[
+                                        symbol as keyof typeof diwaliSymbols
+                                    ]
+                                }
+                            </div>
                         </motion.div>
                     );
                 })
