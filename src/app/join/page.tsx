@@ -5,12 +5,14 @@ import CelebrationIcon from "@mui/icons-material/Celebration";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Link from "next/link";
 import { fetchWrapper } from "@/utils/fetch";
+import { useRouter } from "next/navigation";
 
 export default function JoinRoomPage() {
     const [playerName, setPlayerName] = useState("");
     const [roomCode, setRoomCode] = useState("");
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
+    const router = useRouter();
 
     const validateName = (name: string) => /^[A-Za-z._]+$/.test(name);
 
@@ -45,6 +47,9 @@ export default function JoinRoomPage() {
                 setMessage(
                     `🎉 Joined room successfully! Welcome, ${playerName}!`
                 );
+                localStorage.setItem("playerName", playerName);
+                localStorage.setItem("roomCode", roomCode.toUpperCase());
+                router.push(`/room/${roomCode}`);
             } else {
                 setMessage(`❌ ${data.message || "Failed to join room."}`);
             }
