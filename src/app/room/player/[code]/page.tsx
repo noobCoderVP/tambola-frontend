@@ -4,21 +4,22 @@ import { motion } from "framer-motion";
 import CelebrationIcon from "@mui/icons-material/Celebration";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import HistoryIcon from "@mui/icons-material/History";
-import LogoutIcon from "@mui/icons-material/Logout";
+import LeaderboardIcon from "@mui/icons-material/Leaderboard";
 import { fetchWrapper } from "@/utils/fetch";
 import TicketGrid from "@/components/TicketGrid";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import io from "socket.io-client";
-import CalledCodesModal from "@/components/CalledCodesModal"; // ✅ Added
+import CalledCodesModal from "@/components/CalledCodesModal";
 import { ArrowBack } from "@mui/icons-material";
 import FireworksBackground from "@/components/FireworksBackground";
+import Fireworks from "@/components/Fireworks";
+import { diwaliSymbols } from "@/data/symbols";
 
-const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
-    autoConnect: true,
-});
+const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, { autoConnect: true });
 
 export default function RoomPage() {
     const params: any = useParams();
+    const router = useRouter();
     const code = params.code?.toUpperCase() || "";
     const [username, setPlayerName] = useState<string>("");
     const [ticketString, setTicketString] = useState<string | null>(null);
@@ -26,7 +27,6 @@ export default function RoomPage() {
     const [markedItems, setMarkedItems] = useState<string[]>([]);
     const [markedCount, setMarkedCount] = useState(0);
     const [calledCodes, setCalledCodes] = useState<string[]>([]);
-    const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
     const [showClaimOptions, setShowClaimOptions] = useState(false);
@@ -35,11 +35,17 @@ export default function RoomPage() {
 
     const claimOptions = [
         "First Five",
-        "Line Top",
-        "Line Middle",
-        "Line Bottom",
-        "Full House",
+        "First Column",
+        "Second Column",
+        "Third Column",
+        "Fourth Column",
     ];
+
+    // ✅ Unified Popup Function
+    const showPopup = (text: string, duration = 3000) => {
+        setCalledPopup(text);
+        setTimeout(() => setCalledPopup(null), duration);
+    };
 
     // ✅ Fetch called codes for modal
     const fetchHistory = async () => {
@@ -53,14 +59,14 @@ export default function RoomPage() {
                 setCalledCodes(data.calledCodes || []);
                 setShowHistory(true);
             } else {
-                setMessage("⚠️ Failed to load called codes.");
+                showPopup("⚠️ Failed to load called codes.");
             }
         } catch {
-            setMessage("⚠️ Error loading history.");
+            showPopup("⚠️ Error loading history.");
         }
     };
 
-    // ✅ Claim Handler with Socket Emit
+    // ✅ Claim Handler
     const handleClaim = async (type: string) => {
         try {
             const res = await fetchWrapper({
@@ -71,18 +77,17 @@ export default function RoomPage() {
             const data = await res.json();
 
             if (res.ok) {
-                setMessage(data.message || "Claim submitted!");
+                showPopup(data.message || "✅ Claim submitted!");
                 socket.emit("claim-received", {
                     code,
                     player: username,
                     type,
                 });
             } else {
-                setMessage(data.message || "❌ Claim failed.");
+                showPopup(data.message || "❌ Claim failed.");
             }
-        } catch (err) {
-            console.error(err);
-            setMessage("⚠️ Claim request failed.");
+        } catch {
+            showPopup("⚠️ Claim request failed.");
         } finally {
             setShowClaimOptions(false);
         }
@@ -93,27 +98,22 @@ export default function RoomPage() {
         if (storedName) setPlayerName(storedName);
         fetchTicket();
 
-        // Join socket room for live updates
+        // Join socket room
         if (code && storedName) {
             socket.emit("user-joined", { code, username: storedName });
         }
 
-        // 👇 Add these two event listeners:
         socket.on("game-started", () => {
-            setMessage("🔥 Game started!");
+            showPopup("🔥 Game started!");
             setShowFireworks(true);
             setTimeout(() => setShowFireworks(false), 4000);
         });
 
-        socket.on("code-called", (calledCode) => {
+        socket.on("code-called", (calledCode: string) => {
             console.log("Code called:", calledCode);
-            setCalledPopup(`🎯 Number called: ${calledCode}`);
+            showPopup(`🎯 Number Called: ${calledCode} (${diwaliSymbols[calledCode as keyof typeof diwaliSymbols]})`);
             setShowFireworks(true);
-
-            setTimeout(() => {
-                setCalledPopup(null);
-                setShowFireworks(false);
-            }, 3000);
+            setTimeout(() => setShowFireworks(false), 3000);
         });
 
         return () => {
@@ -158,13 +158,12 @@ export default function RoomPage() {
                 setTicketString(data.ticketString);
                 setMarkedItems([]);
                 setTicketId(data._id);
-                setMessage("🎟️ Ticket generated successfully!");
+                showPopup("🎟️ Ticket generated successfully!");
             } else {
-                setMessage(data.message || "❌ Failed to generate ticket.");
+                showPopup(data.message || "❌ Failed to generate ticket.");
             }
-        } catch (err) {
-            console.error(err);
-            setMessage("⚠️ Something went wrong.");
+        } catch {
+            showPopup("⚠️ Something went wrong.");
         } finally {
             setLoading(false);
         }
@@ -173,36 +172,33 @@ export default function RoomPage() {
     const handleMark = async (symbol: string) => {
         if (!symbol || !ticketId) return;
         if (markedItems.includes(symbol)) return;
-
         const updatedMarks = [...markedItems, symbol];
         setMarkedItems(updatedMarks);
         setMarkedCount(updatedMarks.length);
-
         fetchWrapper({
             url: `/tickets/${ticketId}/mark`,
             method: "PATCH",
             data: { markedItems: updatedMarks },
-        }).catch((err) => console.error("Mark update failed", err));
+        }).catch(console.error);
     };
 
     const handleUnmark = async (symbol: string) => {
         if (!symbol || !ticketId) return;
-
-        const updatedMarks = markedItems.filter((item) => item !== symbol);
+        const updatedMarks = markedItems.filter((i) => i !== symbol);
         setMarkedItems(updatedMarks);
         setMarkedCount(updatedMarks.length);
-
         fetchWrapper({
             url: `/tickets/${ticketId}/mark`,
             method: "PATCH",
             data: { markedItems: updatedMarks },
-        }).catch((err) => console.error("Unmark update failed", err));
+        }).catch(console.error);
     };
 
     return (
         <main className="flex flex-col items-center justify-center min-h-screen px-4 bg-gradient-to-br from-amber-700 via-orange-800 to-rose-900 text-white relative overflow-hidden">
             <FireworksBackground />
-            {/* Header */}
+            {showFireworks && <Fireworks />}
+
             {/* Back */}
             <button
                 onClick={() => window.history.back()}
@@ -210,6 +206,8 @@ export default function RoomPage() {
             >
                 <ArrowBack fontSize="small" /> Back
             </button>
+
+            {/* Header */}
             <motion.div
                 initial={{ opacity: 0, y: -40 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -229,7 +227,7 @@ export default function RoomPage() {
                 </p>
             </motion.div>
 
-            {/* Content */}
+            {/* Main content */}
             <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -249,12 +247,13 @@ export default function RoomPage() {
                         <TicketGrid
                             ticketString={ticketString}
                             markedItems={markedItems}
-                            onMark={(symbol) => {
-                                if (markedItems.includes(symbol))
-                                    handleUnmark(symbol);
-                                else handleMark(symbol);
-                            }}
+                            onMark={(symbol) =>
+                                markedItems.includes(symbol)
+                                    ? handleUnmark(symbol)
+                                    : handleMark(symbol)
+                            }
                         />
+
                         <div className="flex justify-between items-center mt-3 text-yellow-200 text-sm">
                             <span>⭐ Marked: {markedCount}</span>
                             <button
@@ -264,28 +263,31 @@ export default function RoomPage() {
                                 <EmojiEventsIcon fontSize="small" /> Claim
                             </button>
                         </div>
+
+                        {/* View & Leaderboard Buttons */}
+                        <div className="flex justify-between gap-3 mt-3">
+                            <button
+                                onClick={fetchHistory}
+                                className="flex-1 flex items-center justify-center gap-1 bg-yellow-300 text-rose-900 font-bold px-4 py-2 rounded-lg hover:bg-yellow-400 transition active:scale-95"
+                            >
+                                <HistoryIcon fontSize="small" /> View Called
+                                Codes
+                            </button>
+
+                            <button
+                                onClick={() =>
+                                    router.push(`/room/leaderboard/${code}`)
+                                }
+                                className="flex-1 flex items-center justify-center gap-1 bg-yellow-300 text-rose-900 font-bold px-4 py-2 rounded-lg hover:bg-yellow-400 transition active:scale-95"
+                            >
+                                <LeaderboardIcon fontSize="small" /> Leaderboard
+                            </button>
+                        </div>
                     </>
-                )}
-
-                <button
-                    onClick={fetchHistory}
-                    className="flex items-center gap-2 text-yellow-200 mt-3 hover:text-yellow-400 transition"
-                >
-                    <HistoryIcon /> View Called Codes
-                </button>
-
-                {message && (
-                    <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-center text-sm mt-2 text-yellow-100"
-                    >
-                        {message}
-                    </motion.p>
                 )}
             </motion.div>
 
-            {/* ✅ Reusable Called Codes Modal */}
+            {/* Modals */}
             {showHistory && (
                 <CalledCodesModal
                     calledCodes={calledCodes}
@@ -293,9 +295,8 @@ export default function RoomPage() {
                 />
             )}
 
-            {/* Claim Modal */}
             {showClaimOptions && (
-                <div className="absolute inset-0 bg-black/60 flex justify-center items-center">
+                <div className="absolute inset-0 bg-black/60 flex justify-center items-center z-[50]">
                     <div className="bg-rose-900 border border-yellow-400 p-6 rounded-2xl w-80 text-yellow-200 shadow-lg">
                         <h2 className="text-lg font-bold mb-3 text-center">
                             🏆 Choose Claim Type
@@ -320,15 +321,19 @@ export default function RoomPage() {
                     </div>
                 </div>
             )}
+
+            {/* 🎯 Popup */}
             {calledPopup && (
                 <motion.div
-                    initial={{ opacity: 0, y: -50 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -50 }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
                     transition={{ duration: 0.4 }}
-                    className="fixed top-8 left-1/2 -translate-x-1/2 bg-yellow-300 text-rose-900 px-6 py-3 rounded-2xl shadow-2xl text-lg font-extrabold z-[9999] border-4 border-yellow-500 backdrop-blur-md"
+                    className="fixed inset-0 bg-black/60 flex justify-center items-center z-[100]"
                 >
-                    {calledPopup}
+                    <div className="bg-yellow-300 text-rose-900 px-8 py-5 rounded-2xl shadow-2xl text-xl font-extrabold border-4 border-yellow-500 backdrop-blur-md text-center animate-bounce">
+                        {calledPopup}
+                    </div>
                 </motion.div>
             )}
         </main>

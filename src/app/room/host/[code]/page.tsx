@@ -6,10 +6,12 @@ import CelebrationIcon from "@mui/icons-material/Celebration";
 import HistoryIcon from "@mui/icons-material/History";
 import CloseIcon from "@mui/icons-material/Close";
 import LogoutIcon from "@mui/icons-material/Logout";
+import LeaderboardIcon from "@mui/icons-material/Leaderboard";
 import { fetchWrapper } from "@/utils/fetch";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import CalledCodesModal from "@/components/CalledCodesModal";
 import Fireworks from "@/components/Fireworks";
+import Popup from "@/components/Popup";
 import { ArrowBack } from "@mui/icons-material";
 
 const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "", {
@@ -18,13 +20,13 @@ const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "", {
 
 export default function HostRoomPage() {
     const params: any = useParams();
+    const router = useRouter();
     const code = params.code?.toUpperCase() || "";
-
     const [room, setRoom] = useState<any>(null);
     const [calledCodes, setCalledCodes] = useState<string[]>([]);
     const [lastCalled, setLastCalled] = useState<string | null>(null);
     const [lastMeaning, setLastMeaning] = useState<string | null>(null);
-    const [message, setMessage] = useState("");
+    const [popupMsg, setPopupMsg] = useState("");
     const [showHistory, setShowHistory] = useState(false);
     const [confirmClose, setConfirmClose] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -43,20 +45,15 @@ export default function HostRoomPage() {
             setRoom(data);
             setCalledCodes(data.calledCodes || []);
         } catch {
-            setMessage("⚠️ Failed to load room details.");
+            setPopupMsg("⚠️ Failed to load room details.");
         }
     };
 
     useEffect(() => {
         fetchRoom();
-        socket.emit("user-joined", { code: code, username: "HOST" });
-
-        socket.on("user-joined", ({ username }) => {
-            setMessage(`🎉 ${username} joined the room`);
-        });
 
         socket.on("game-started", () => {
-            setMessage("🔥 Game started!");
+            setPopupMsg("🔥 Game started!");
             setRoom((r: any) => ({ ...r, isActive: true }));
         });
 
@@ -65,11 +62,13 @@ export default function HostRoomPage() {
             setLastCalled(calledCode);
         });
 
-        socket.on("claim-received", ({ username, claimType }) => {
-            setMessage(`🏆 ${username} made a claim: ${claimType}`);
+        socket.on("claim-received", ({ player, type }) => {
+            setPopupMsg(`🏆 ${player} made a claim: ${type}`);
         });
 
-        return () => {socket.disconnect()};
+        return () => {
+            socket.disconnect();
+        };
     }, []);
 
     // ✅ Start Game
@@ -84,12 +83,12 @@ export default function HostRoomPage() {
             const data = await res.json();
             if (res.ok) {
                 socket.emit("game-started", { code });
-                setMessage(`🪔 Game Started!`);
+                setPopupMsg(`🪔 Game Started!`);
             } else {
-                setMessage(data.message || "⚠️ Could not start game.");
+                setPopupMsg(data.message || "⚠️ Could not start game.");
             }
         } catch {
-            setMessage("⚠️ Error starting game.");
+            setPopupMsg("⚠️ Error starting game.");
         } finally {
             setLoading(false);
         }
@@ -101,9 +100,8 @@ export default function HostRoomPage() {
         setLoading(true);
         setShowCountdown(true);
         setCountdown(3);
-        setMessage("");
+        setPopupMsg("");
 
-        // Countdown animation (3...2...1...)
         const countdownInterval = setInterval(() => {
             setCountdown((prev) => {
                 if (prev === 1) {
@@ -114,7 +112,6 @@ export default function HostRoomPage() {
             });
         }, 1000);
 
-        // Wait 3 seconds before fetching
         setTimeout(async () => {
             try {
                 const res = await fetchWrapper({
@@ -132,16 +129,13 @@ export default function HostRoomPage() {
                     setLastCalled(data.item);
                     setLastMeaning(data.meaning);
                     setCalledCodes((prev) => [...prev, data.item]);
-                    setMessage(data.message || `🪔 Called: ${data.item}`);
-
-                    // 🎆 Trigger fireworks
                     setShowFireworks(true);
                     setTimeout(() => setShowFireworks(false), 2500);
                 } else {
-                    setMessage(data.message || "No more codes left!");
+                    setPopupMsg(data.message || "No more codes left!");
                 }
             } catch {
-                setMessage("⚠️ Error calling code.");
+                setPopupMsg("⚠️ Error calling code.");
             } finally {
                 setLoading(false);
             }
@@ -156,11 +150,11 @@ export default function HostRoomPage() {
                 method: "POST",
             });
             if (res.ok) {
-                alert("Room closed successfully!");
-                window.location.href = "/";
-            } else setMessage("⚠️ Failed to close room.");
+                setPopupMsg("✅ Room closed successfully!");
+                setTimeout(() => (window.location.href = "/"), 2000);
+            } else setPopupMsg("⚠️ Failed to close room.");
         } catch {
-            setMessage("⚠️ Room close failed.");
+            setPopupMsg("⚠️ Room close failed.");
         }
     };
 
@@ -172,6 +166,7 @@ export default function HostRoomPage() {
             >
                 <ArrowBack fontSize="small" /> Back
             </button>
+
             {/* Header */}
             <motion.div
                 initial={{ opacity: 0, y: -40 }}
@@ -214,7 +209,7 @@ export default function HostRoomPage() {
                 )}
             </div>
 
-            {/* Countdown before reveal */}
+            {/* Countdown */}
             {showCountdown && (
                 <motion.div
                     key={countdown}
@@ -227,7 +222,7 @@ export default function HostRoomPage() {
                 </motion.div>
             )}
 
-            {/* Last Called Display */}
+            {/* Last Called */}
             {lastCalled && !showCountdown && (
                 <motion.div
                     key={lastCalled}
@@ -248,16 +243,22 @@ export default function HostRoomPage() {
                 </motion.div>
             )}
 
-            {/* Fireworks Animation */}
             {showFireworks && <Fireworks />}
 
             {/* Buttons Section */}
             <div className="flex flex-col gap-3 mt-10 w-full max-w-xs">
                 <button
                     onClick={() => setShowHistory(true)}
-                    className="flex items-center justify-center gap-2 bg-transparent border border-yellow-400 text-yellow-200 py-3 rounded-xl hover:bg-yellow-400 hover:text-rose-900 transition"
+                    className="flex-1 flex items-center justify-center gap-1 bg-yellow-300 text-rose-900 font-bold px-4 py-2 rounded-lg hover:bg-yellow-400 transition active:scale-95"
                 >
-                    <HistoryIcon /> View Called Codes
+                    <HistoryIcon fontSize="small" /> View Called Codes
+                </button>
+
+                <button
+                    onClick={() => router.push(`/room/leaderboard/${code}`)}
+                    className="flex-1 flex items-center justify-center gap-1 bg-yellow-300 text-rose-900 font-bold px-4 py-2 rounded-lg hover:bg-yellow-400 transition active:scale-95"
+                >
+                    <LeaderboardIcon fontSize="small" /> Leaderboard
                 </button>
 
                 <button
@@ -323,6 +324,9 @@ export default function HostRoomPage() {
             >
                 🎇 Let the Diwali Luck Decide the Next Code!
             </motion.div>
+
+            {/* Popup */}
+            <Popup message={popupMsg} onClose={() => setPopupMsg("")} />
         </main>
     );
 }
