@@ -32,7 +32,7 @@ export default function UserRegisterPage() {
                 url: '/users/register',
                 method: 'POST',
                 data: {
-                    username,
+                    username: username.toUpperCase().trim(),
                     password
                 }
             });

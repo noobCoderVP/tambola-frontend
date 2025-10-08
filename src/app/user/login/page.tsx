@@ -25,7 +25,7 @@ export default function UserLoginPage() {
                 url: "/users/login",
                 method: "POST",
                 data: {
-                    username,
+                    username: username.toUpperCase().trim(),
                     password,
                 },
             });
