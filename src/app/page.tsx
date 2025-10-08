@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Tilt from "react-parallax-tilt";
 import { Button } from "@mui/material";
@@ -7,11 +8,31 @@ import CelebrationIcon from "@mui/icons-material/Celebration";
 import FireworksIcon from "@mui/icons-material/Whatshot";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import GroupAddIcon from "@mui/icons-material/GroupAdd";
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import LogoutIcon from "@mui/icons-material/Logout";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import LoginIcon from "@mui/icons-material/Login";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+    const [username, setUsername] = useState("");
+    const router = useRouter();
+
+    useEffect(() => {
+        // ✅ Fetch username info from localStorage or backend API
+        const storedUser = localStorage.getItem("username");
+        if (storedUser) {
+            setUsername(storedUser);
+        }
+    }, []);
+
+    const handleLogout = () => {
+        // ✅ Clear username session
+        localStorage.removeItem("username");
+        setUsername("");
+        router.refresh();
+    };
+
     return (
         <main className="relative flex flex-col items-center justify-center min-h-screen overflow-hidden text-white bg-gradient-to-br from-amber-600 via-orange-700 to-rose-800 px-4">
             {/* Floating festive glow background */}
@@ -31,9 +52,50 @@ export default function Home() {
                 }}
             />
 
+            {/* Top-right corner: Conditional buttons */}
+            <div className="absolute top-5 right-5 flex items-center gap-3">
+                {username ? (
+                    <>
+                        <span className="text-yellow-200 font-semibold text-lg">
+                            Hi, {username || "Player"} 🎉
+                        </span>
+                        <Button
+                            variant="contained"
+                            startIcon={<LogoutIcon />}
+                            onClick={handleLogout}
+                            className="!bg-yellow-300 !text-rose-900 !font-bold !rounded-xl !shadow-md hover:!bg-yellow-400 !py-2"
+                        >
+                            Logout
+                        </Button>
+                    </>
+                ) : (
+                    <>
+                        <Link href="/username/register">
+                            <Button
+                                variant="contained"
+                                startIcon={<PersonAddIcon />}
+                                className="!bg-yellow-300 !text-rose-900 !font-bold !rounded-xl !shadow-md hover:!bg-yellow-400 !py-2"
+                            >
+                                Register
+                            </Button>
+                        </Link>
+
+                        <Link href="/username/login">
+                            <Button
+                                variant="outlined"
+                                startIcon={<LoginIcon />}
+                                className="!border-yellow-300 !text-yellow-200 !font-bold !rounded-xl hover:!bg-yellow-300 hover:!text-rose-900 !py-2"
+                            >
+                                Login
+                            </Button>
+                        </Link>
+                    </>
+                )}
+            </div>
+
             {/* Fireworks animation */}
             <motion.div
-                className="absolute top-0 left-0 right-0 flex justify-center mt-8 pointer-events-none"
+                className="absolute top-20 left-0 right-0 flex justify-center mt-8 pointer-events-none"
                 animate={{ opacity: [0.5, 1, 0.5] }}
                 transition={{
                     repeat: Infinity,
@@ -49,29 +111,6 @@ export default function Home() {
                     sx={{ fontSize: 40, color: "#FF4500", marginLeft: 8 }}
                 />
             </motion.div>
-
-            {/* Register / Login Buttons (Top Right) */}
-            <div className="absolute top-5 right-5 flex gap-3">
-                <Link href="/user/register">
-                    <Button
-                        variant="contained"
-                        startIcon={<PersonAddIcon />}
-                        className="!bg-yellow-300 !text-rose-900 !font-bold !rounded-xl !shadow-md hover:!bg-yellow-400 !py-2"
-                    >
-                        Register
-                    </Button>
-                </Link>
-
-                <Link href="/user/login">
-                    <Button
-                        variant="outlined"
-                        startIcon={<LoginIcon />}
-                        className="!border-yellow-300 !text-yellow-200 !font-bold !rounded-xl hover:!bg-yellow-300 hover:!text-rose-900 !py-2"
-                    >
-                        Login
-                    </Button>
-                </Link>
-            </div>
 
             {/* Title */}
             <motion.div
@@ -128,7 +167,6 @@ export default function Home() {
                         </Button>
                     </Link>
 
-                    {/* My Rooms Button */}
                     <Link href="/rooms" className="w-full">
                         <Button
                             variant="outlined"
