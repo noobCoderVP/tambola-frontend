@@ -70,7 +70,7 @@ export default function Home() {
                     </>
                 ) : (
                     <>
-                        <Link href="/username/register">
+                        <Link href="/user/register">
                             <Button
                                 variant="contained"
                                 startIcon={<PersonAddIcon />}
@@ -80,7 +80,7 @@ export default function Home() {
                             </Button>
                         </Link>
 
-                        <Link href="/username/login">
+                        <Link href="/user/login">
                             <Button
                                 variant="outlined"
                                 startIcon={<LoginIcon />}
