@@ -13,6 +13,7 @@ import CalledCodesModal from "@/components/CalledCodesModal";
 import Fireworks from "@/components/Fireworks";
 import Popup from "@/components/Popup";
 import { ArrowBack } from "@mui/icons-material";
+import CodeLoader from "@/components/CodeLoader";
 
 const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "", {
     autoConnect: true,
@@ -63,6 +64,7 @@ export default function HostRoomPage() {
         });
 
         socket.on("claim-received", ({ player, type }) => {
+            console.log(`Claim received: ${player} - ${type}`);
             setPopupMsg(`🏆 ${player} made a claim: ${type}`);
         });
 
@@ -177,7 +179,7 @@ export default function HostRoomPage() {
                 <div className="flex items-center gap-3 mb-2">
                     <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
                     <h1 className="text-3xl font-extrabold tracking-wide text-center">
-                        Host Room – Diwali Tambola
+                        Host Room – Diwali Housey
                     </h1>
                     <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
                 </div>
@@ -222,25 +224,30 @@ export default function HostRoomPage() {
                 </motion.div>
             )}
 
-            {/* Last Called */}
-            {lastCalled && !showCountdown && (
-                <motion.div
-                    key={lastCalled}
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.6 }}
-                    className="mt-8 text-center"
-                >
-                    <p className="text-yellow-100 text-lg">Last Called:</p>
-                    <p className="text-6xl font-extrabold text-yellow-300 tracking-widest mt-2 drop-shadow-lg">
-                        {lastCalled}
-                    </p>
-                    {lastMeaning && (
-                        <p className="text-yellow-200 text-lg mt-2 italic">
-                            “{lastMeaning}”
+            {/* Loader or Last Called */}
+            {loading && !showCountdown ? (
+                <CodeLoader />
+            ) : (
+                lastCalled &&
+                !showCountdown && (
+                    <motion.div
+                        key={lastCalled}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 0.6 }}
+                        className="mt-8 text-center"
+                    >
+                        <p className="text-yellow-100 text-lg">Last Called:</p>
+                        <p className="text-6xl font-extrabold text-yellow-300 tracking-widest mt-2 drop-shadow-lg">
+                            {lastCalled}
                         </p>
-                    )}
-                </motion.div>
+                        {lastMeaning && (
+                            <p className="text-yellow-200 text-lg mt-2 italic">
+                                “{lastMeaning}”
+                            </p>
+                        )}
+                    </motion.div>
+                )
             )}
 
             {showFireworks && <Fireworks />}

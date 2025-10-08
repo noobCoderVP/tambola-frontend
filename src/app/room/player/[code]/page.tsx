@@ -38,7 +38,7 @@ export default function RoomPage() {
         "First Column",
         "Second Column",
         "Third Column",
-        "Fourth Column",
+        "Full House",
     ];
 
     // ✅ Unified Popup Function
@@ -217,7 +217,7 @@ export default function RoomPage() {
                 <div className="flex items-center gap-3 mb-2">
                     <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
                     <h1 className="text-3xl font-extrabold tracking-wide text-center">
-                        Diwali Tambola Room
+                        Diwali Housey Room
                     </h1>
                     <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
                 </div>

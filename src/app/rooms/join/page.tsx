@@ -73,7 +73,7 @@ export default function JoinRoomPage() {
             >
                 <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
                 <h1 className="text-3xl font-extrabold tracking-wide text-center">
-                    Join Diwali Tambola Room
+                    Join Diwali Housey Room
                 </h1>
                 <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
             </motion.div>
@@ -151,7 +151,7 @@ export default function JoinRoomPage() {
                     ease: "easeInOut",
                 }}
             >
-                🎇 Ready to Play the Diwali Tambola Magic!
+                🎇 Ready to Play the Diwali Housey Magic!
             </motion.div>
         </main>
     );

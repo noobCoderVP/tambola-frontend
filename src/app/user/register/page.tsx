@@ -64,7 +64,7 @@ export default function UserRegisterPage() {
             >
                 <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
                 <h1 className="text-3xl font-extrabold tracking-wide text-center">
-                    User Registration – Diwali Tambola
+                    User Registration – Diwali Housey
                 </h1>
                 <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
             </motion.div>

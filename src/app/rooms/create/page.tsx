@@ -61,7 +61,7 @@ export default function CreateRoomPage() {
             >
                 <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
                 <h1 className="text-3xl font-extrabold tracking-wide text-center">
-                    Create Diwali Tambola Room
+                    Create Diwali Housey Room
                 </h1>
                 <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
             </motion.div>

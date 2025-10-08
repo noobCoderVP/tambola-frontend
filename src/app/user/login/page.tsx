@@ -36,7 +36,7 @@ export default function UserLoginPage() {
             if (res.ok) {
                 setMessage("✅ Welcome back, " + username + "!");
                 // Store username (optional for session)
-                localStorage.setItem("username", data.username);
+                localStorage.setItem("username", data.username.toUpperCase());
 
                 setTimeout(() => {
                     router.push("/rooms");
@@ -63,7 +63,7 @@ export default function UserLoginPage() {
             >
                 <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
                 <h1 className="text-3xl font-extrabold tracking-wide text-center">
-                    User Login – Diwali Tambola
+                    User Login – Diwali Housey
                 </h1>
                 <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
             </motion.div>

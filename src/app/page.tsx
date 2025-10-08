@@ -121,7 +121,7 @@ export default function Home() {
             >
                 <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
                 <h1 className="text-4xl font-extrabold tracking-wide text-center">
-                    Diwali Tambola
+                    Diwali Housey
                 </h1>
                 <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
             </motion.div>
@@ -133,7 +133,7 @@ export default function Home() {
                 transition={{ delay: 0.5, duration: 0.6 }}
                 className="text-center text-lg mb-10 text-amber-100 max-w-xs"
             >
-                Light up your game night with a festive twist on Tambola — 99
+                Light up your game night with a festive twist on Classical Housey — 90
                 Diwali names, unlimited fun!
             </motion.p>
 
