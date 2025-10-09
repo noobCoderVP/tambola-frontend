@@ -12,7 +12,7 @@ import { useParams, useRouter } from "next/navigation";
 import CalledCodesModal from "@/components/CalledCodesModal";
 import Fireworks from "@/components/Fireworks";
 import Popup from "@/components/Popup";
-import { ArrowBack } from "@mui/icons-material";
+import { ArrowBack, People } from "@mui/icons-material";
 import CodeLoader from "@/components/CodeLoader";
 
 const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "", {
@@ -144,19 +144,30 @@ export default function HostRoomPage() {
         }, 3000);
     };
 
-    // ✅ Close Room
+
+    // ✅ Close Game
     const closeRoom = async () => {
+        setLoading(true);
         try {
             const res = await fetchWrapper({
                 url: `/rooms/${code}/close`,
                 method: "POST",
+                data: { host: localStorage.getItem("username") },
             });
+            const data = await res.json();
+
             if (res.ok) {
-                setPopupMsg("✅ Room closed successfully!");
-                setTimeout(() => (window.location.href = "/"), 2000);
-            } else setPopupMsg("⚠️ Failed to close room.");
+                socket.emit("game-closed", { code });
+                setPopupMsg(`🪔 Game Closed!`);
+                router.push("/");
+            } else {
+                setPopupMsg(data.message || "⚠️ Could not close game.");
+            }
         } catch {
-            setPopupMsg("⚠️ Room close failed.");
+            setPopupMsg("⚠️ Error closing game.");
+        } finally {
+            setLoading(false);
+            setConfirmClose(false);
         }
     };
 
@@ -179,7 +190,7 @@ export default function HostRoomPage() {
                 <div className="flex items-center gap-3 mb-2">
                     <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
                     <h1 className="text-3xl font-extrabold tracking-wide text-center">
-                        Host Room – Diwali Housey
+                        Host Room – Diwali Housie
                     </h1>
                     <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
                 </div>
@@ -266,6 +277,13 @@ export default function HostRoomPage() {
                     className="flex-1 flex items-center justify-center gap-1 bg-yellow-300 text-rose-900 font-bold px-4 py-2 rounded-lg hover:bg-yellow-400 transition active:scale-95"
                 >
                     <LeaderboardIcon fontSize="small" /> Leaderboard
+                </button>
+
+                <button
+                    onClick={() => router.push(`/room/players/${code}`)}
+                    className="flex-1 flex items-center justify-center gap-1 bg-yellow-300 text-rose-900 font-bold px-4 py-2 rounded-lg hover:bg-yellow-400 transition active:scale-95"
+                >
+                    <People fontSize="small" /> Players
                 </button>
 
                 <button

@@ -7,7 +7,11 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { fetchWrapper } from "@/utils/fetch";
+import InputField from "@/components/InputField";
 
+/* --------------------------------------------
+   🔹 User Registration Page
+--------------------------------------------- */
 export default function UserRegisterPage() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
@@ -16,6 +20,9 @@ export default function UserRegisterPage() {
     const [message, setMessage] = useState("");
     const router = useRouter();
 
+    /* --------------------------------------------
+       🔹 Handle Registration
+    --------------------------------------------- */
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -29,12 +36,12 @@ export default function UserRegisterPage() {
 
         try {
             const res = await fetchWrapper({
-                url: '/users/register',
-                method: 'POST',
+                url: "/users/register",
+                method: "POST",
                 data: {
                     username: username.toUpperCase().trim(),
-                    password
-                }
+                    password,
+                },
             });
 
             const data = await res.json();
@@ -43,7 +50,7 @@ export default function UserRegisterPage() {
                 setMessage("✅ Registered successfully! Redirecting...");
                 setTimeout(() => router.push("/user/login"), 1500);
             } else {
-                setMessage(data.message || "❌ Registration failed.");
+                setMessage(`❌ ${data.message || "Registration failed."}`);
             }
         } catch (err) {
             console.error(err);
@@ -53,30 +60,38 @@ export default function UserRegisterPage() {
         }
     };
 
+    /* --------------------------------------------
+       🔹 JSX Markup
+    --------------------------------------------- */
     return (
         <main className="flex flex-col items-center justify-center min-h-screen px-4 bg-gradient-to-br from-amber-700 via-orange-800 to-rose-900 text-white relative overflow-hidden">
             {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: -40 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
-                className="flex items-center gap-3 mb-8 mt-10"
-            >
-                <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
-                <h1 className="text-3xl font-extrabold tracking-wide text-center">
-                    User Registration – Diwali Housey
-                </h1>
-                <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
-            </motion.div>
+            <header>
+                <motion.div
+                    initial={{ opacity: 0, y: -40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8 }}
+                    className="flex items-center gap-3 mb-8 mt-10"
+                >
+                    <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
+                    <h1 className="text-3xl font-extrabold tracking-wide text-center">
+                        User Registration – Diwali Housie
+                    </h1>
+                    <CelebrationIcon sx={{ fontSize: 40, color: "#FFD700" }} />
+                </motion.div>
 
-            {/* Back Button */}
-            <Link href="/" className="absolute top-5 left-5">
-                <button className="flex items-center gap-1 border border-yellow-400 text-yellow-300 text-sm px-3 py-1.5 rounded-md hover:bg-yellow-300 hover:text-rose-900 transition">
-                    <ArrowBackIcon fontSize="small" /> Home
-                </button>
-            </Link>
+                {/* Back Button */}
+                <Link href="/" className="absolute top-5 left-5">
+                    <button
+                        type="button"
+                        className="flex items-center gap-1 border border-yellow-400 text-yellow-300 text-sm px-3 py-1.5 rounded-md hover:bg-yellow-300 hover:text-rose-900 transition"
+                    >
+                        <ArrowBackIcon fontSize="small" /> Home
+                    </button>
+                </Link>
+            </header>
 
-            {/* Register Card */}
+            {/* Registration Form */}
             <motion.form
                 onSubmit={handleRegister}
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -84,44 +99,31 @@ export default function UserRegisterPage() {
                 transition={{ duration: 0.6 }}
                 className="bg-white/10 p-6 rounded-2xl shadow-xl backdrop-blur-md flex flex-col gap-4 w-full max-w-sm border border-yellow-400/40"
             >
-                <div className="flex flex-col gap-2">
-                    <label className="text-yellow-200 font-semibold">
-                        Username
-                    </label>
-                    <input
-                        type="text"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        placeholder="Enter your username"
-                        className="w-full px-4 py-2 rounded-lg bg-transparent border border-yellow-400 text-white placeholder-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                    />
-                </div>
+                <InputField
+                    id="username"
+                    label="Username"
+                    value={username}
+                    onChange={(val) => setUsername(val.toUpperCase())}
+                    placeholder="Enter your username"
+                />
 
-                <div className="flex flex-col gap-2">
-                    <label className="text-yellow-200 font-semibold">
-                        Password
-                    </label>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Enter your password"
-                        className="w-full px-4 py-2 rounded-lg bg-transparent border border-yellow-400 text-white placeholder-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                    />
-                </div>
+                <InputField
+                    id="password"
+                    label="Password"
+                    type="password"
+                    value={password}
+                    onChange={(val) => setPassword(val)}
+                    placeholder="Enter your password"
+                />
 
-                <div className="flex flex-col gap-2">
-                    <label className="text-yellow-200 font-semibold">
-                        Confirm Password
-                    </label>
-                    <input
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Confirm your password"
-                        className="w-full px-4 py-2 rounded-lg bg-transparent border border-yellow-400 text-white placeholder-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                    />
-                </div>
+                <InputField
+                    id="confirmPassword"
+                    label="Confirm Password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(val) => setConfirmPassword(val)}
+                    placeholder="Confirm your password"
+                />
 
                 <button
                     type="submit"
@@ -140,6 +142,16 @@ export default function UserRegisterPage() {
                         {message}
                     </motion.p>
                 )}
+
+                <p className="text-center text-yellow-100 text-sm mt-4">
+                    Already have an account?{" "}
+                    <Link
+                        href="/user/login"
+                        className="text-yellow-300 font-semibold hover:underline"
+                    >
+                        Login here
+                    </Link>
+                </p>
             </motion.form>
 
             {/* Footer */}

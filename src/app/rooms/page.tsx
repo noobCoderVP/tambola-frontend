@@ -90,7 +90,7 @@ export default function MyRoomsPage() {
             >
                 <CelebrationIcon sx={{ fontSize: 36, color: "#FFD700" }} />
                 <h1 className="text-3xl font-extrabold tracking-wide text-center">
-                    My Housey Rooms
+                    My Housie Rooms
                 </h1>
                 <CelebrationIcon sx={{ fontSize: 36, color: "#FFD700" }} />
             </motion.div>
