@@ -31,6 +31,7 @@ export default function RoomPage() {
     const [showHistory, setShowHistory] = useState(false);
     const [showClaimOptions, setShowClaimOptions] = useState(false);
     const [showFireworks, setShowFireworks] = useState(false);
+    const [loadingTicket, setLoadingTicket] = useState(true);
     const [calledPopup, setCalledPopup] = useState<string | null>(null);
 
     const claimOptions = [
@@ -80,8 +81,8 @@ export default function RoomPage() {
                 showPopup(data.message || "✅ Claim submitted!");
                 socket.emit("claim-received", {
                     code,
-                    player: username,
                     type,
+                    player: username,
                 });
             } else {
                 showPopup(data.message || "❌ Claim failed.");
@@ -116,14 +117,20 @@ export default function RoomPage() {
             setTimeout(() => setShowFireworks(false), 3000);
         });
 
+        socket.on("claim-received", ({ player, type }) => {
+            showPopup(`🏆 ${player} made a claim: ${type}`);
+        });
+
         return () => {
             socket.off("game-started");
             socket.off("code-called");
+            socket.off("claim-received");
             socket.disconnect();
         };
     }, []);
 
     const fetchTicket = async () => {
+        setLoadingTicket(true);
         try {
             const res = await fetchWrapper({
                 url: `/tickets?username=${localStorage.getItem(
@@ -142,8 +149,11 @@ export default function RoomPage() {
             }
         } catch (err) {
             console.error(err);
+        } finally {
+            setLoadingTicket(false);
         }
     };
+
 
     const generateTicket = async () => {
         setLoading(true);
@@ -234,7 +244,11 @@ export default function RoomPage() {
                 transition={{ duration: 0.6 }}
                 className="bg-white/10 p-6 rounded-2xl shadow-xl backdrop-blur-md flex flex-col gap-5 w-full max-w-md border border-yellow-400/40"
             >
-                {!ticketString ? (
+                {loadingTicket ? (
+                    <div className="flex justify-center items-center py-8">
+                        <div className="w-8 h-8 border-4 border-yellow-300 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                ) : !ticketString ? (
                     <button
                         onClick={generateTicket}
                         disabled={loading}

@@ -69,6 +69,9 @@ export default function HostRoomPage() {
         });
 
         return () => {
+            socket.off("game-started");
+            socket.off("code-called");
+            socket.off("claim-received");
             socket.disconnect();
         };
     }, []);
@@ -93,6 +96,7 @@ export default function HostRoomPage() {
             setPopupMsg("⚠️ Error starting game.");
         } finally {
             setLoading(false);
+            location.reload();
         }
     };
 
