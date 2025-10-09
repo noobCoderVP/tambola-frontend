@@ -205,7 +205,7 @@ export default function RoomPage() {
     };
 
     return (
-        <main className="flex flex-col items-center justify-center min-h-screen px-4 bg-gradient-to-br from-amber-700 via-orange-800 to-rose-900 text-white relative overflow-hidden">
+        <main className="flex flex-col items-center justify-center min-h-screen px-4 bg-gradient-to-br from-amber-700 via-orange-800 to-rose-900 text-white relative">
             <FireworksBackground />
             {showFireworks && <Fireworks />}
 

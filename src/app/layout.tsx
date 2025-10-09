@@ -39,7 +39,7 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body
-                className={`${geistSans.variable} ${geistMono.variable} antialiased relative overflow-hidden`}
+                className={`${geistSans.variable} ${geistMono.variable} antialiased relative`}
             >
                 <SparkleBackground /> {/* Client component with animation */}
                 <main className="relative z-10">{children}</main>
